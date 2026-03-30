@@ -101,5 +101,48 @@ python src/ingestion/embedder.py --input data/raw/ --collection finrag
 streamlit run app/streamlit_app.py
 
 ## Example Queries
+The system is designed to handle faceted financial queries that combine semantic intent with structured constraints:
+"Show me all emerging market buy
+recommendations from analysts with
+10+ years of coverage who changed
+their view in the last 6 months"
+
+"Summarise the bull case for
+semiconductor stocks from analysts who
+cover both Asia and North America"
+
+"Which analysts reversed a sell
+recommendation on energy stocks
+after Q3 earnings season?"
+
+"Find research notes where the analyst
+significantly raised their
+price target alongside a rating 
+upgrade"
+
+
+## Retrieval Strategy Comparison
+<img width="968" height="634" alt="image" src="https://github.com/user-attachments/assets/c63d394e-ab06-4764-a026-afdd0dd98e6d" />
+
+Benchmarked on 200 synthetic ground-truth query-document pairs.
+
+## Tech Stack
+<img width="584" height="1302" alt="image" src="https://github.com/user-attachments/assets/a5a0bbac-55a1-41a9-ac48-82552660cceb" />
+
+## DataOps Practices
+- All pipeline runs versioned and logged to MLflow
+- Embedding freshness tracked per document – state chunks trigger re-ingestion
+- CI/CD via Github Actions: lint -> unit tests -> integration test against Qdrant Docker
+- Environment parity: same docker-compose.yml for dev, staging, and production
+- IaC-ready: AWS CDK stacks for App Runner + EventBridge deployment (see infra/)
+
+## Roadmap
+- AWS EventBridge integration for event-driven re-ingestion on new research publish
+- Structured metadata retrieval for faceted search UI (filter by analyst, sector, date range)
+- GraphRAG expansion: multi-hop reasoning across analyst -> company -> sector nodes
+- A/B evaluation framework: compare retrieval strategies on live query traffic
+- Streaming LLM responses in the Streamlit UI
+
+
 
 
