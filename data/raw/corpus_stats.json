@@ -1,0 +1,32 @@
+{
+  "total_reports": 50,
+  "rating_changes": 25,
+  "sectors": {
+    "Technology": 4,
+    "Energy": 5,
+    "Healthcare": 4,
+    "Financials": 3,
+    "Consumer Discretionary": 6,
+    "Industrials": 8,
+    "Materials": 5,
+    "Real Estate": 7,
+    "Utilities": 2,
+    "Communication Services": 6
+  },
+  "regions": {
+    "North America": 6,
+    "Europe": 4,
+    "Emerging Markets": 9,
+    "Asia Pacific": 9,
+    "Latin America": 13,
+    "Middle East & Africa": 9
+  },
+  "rating_distribution": {
+    "Strong Buy": 20,
+    "Buy": 4,
+    "Hold": 12,
+    "Sell": 8,
+    "Strong Sell": 6
+  },
+  "avg_years_coverage": 16.9
+}

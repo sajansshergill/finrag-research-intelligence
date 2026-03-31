@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+
+  # ── Qdrant vector store ────────────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: finrag-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MLflow tracking server ─────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: finrag-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    command: >
+      mlflow server
+        --host 0.0.0.0
+        --port 5000
+        --backend-store-uri sqlite:///mlflow/mlflow.db
+        --default-artifact-root /mlflow/artifacts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Streamlit demo app ─────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finrag-app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+    environment:
+      OPENAI_API_KEY:    ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      QDRANT_URL:        http://qdrant:6333
+      MLFLOW_URL:        http://mlflow:5000
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+    command: streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+
+  # ── Airflow (standalone, includes scheduler + webserver) ───────────────────
+  airflow:
+    image: apache/airflow:2.8-python3.11
+    container_name: finrag-airflow
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - airflow_data:/opt/airflow
+    environment:
+      AIRFLOW__CORE__EXECUTOR:                    LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN:        sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__LOAD_EXAMPLES:               "False"
+      AIRFLOW__CORE__DAGS_FOLDER:                 /opt/airflow/dags
+      AIRFLOW__WEBSERVER__SECRET_KEY:             finrag-secret-key
+      OPENAI_API_KEY:                             ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY:                          ${ANTHROPIC_API_KEY:-}
+      QDRANT_URL:                                 http://qdrant:6333
+      PYTHONPATH:                                 /opt/airflow
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    command: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create
+          --username admin --password admin
+          --firstname Admin --lastname User
+          --role Admin --email admin@finrag.local &&
+        airflow webserver &
+        airflow scheduler
+      "
+
+volumes:
+  qdrant_storage:
+  mlflow_data:
+  airflow_data:

@@ -1,0 +1,2 @@
+"""FinRAG research intelligence package."""
+

@@ -1,0 +1,55 @@
+[build-system]
+requires      = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name        = "finrag-research-intelligence"
+version     = "0.1.0"
+description = "Production-grade hybrid RAG pipeline for financial research archives"
+readme      = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "faker>=24.0",
+    "duckdb>=0.10",
+    "rank-bm25>=0.2.2",
+    "networkx>=3.2",
+    "sentence-transformers>=2.6",
+    "qdrant-client>=1.8",
+    "openai>=1.12",
+    "anthropic>=0.20",
+    "mlflow>=2.11",
+    "streamlit>=1.32",
+    "pandas>=2.0",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.3",
+    "mypy>=1.9",
+]
+airflow = [
+    "apache-airflow>=2.8",
+    "apache-airflow-providers-amazon>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "app*", "dags*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths    = ["test_pipeline.py"]
+addopts      = "-v --tb=short"
+pythonpath   = ["."]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
