@@ -1,32 +1,32 @@
 {
-  "total_reports": 50,
-  "rating_changes": 25,
+  "total_reports": 2,
+  "rating_changes": 2,
   "sectors": {
-    "Technology": 4,
-    "Energy": 5,
-    "Healthcare": 4,
-    "Financials": 3,
-    "Consumer Discretionary": 6,
-    "Industrials": 8,
-    "Materials": 5,
-    "Real Estate": 7,
-    "Utilities": 2,
-    "Communication Services": 6
+    "Technology": 0,
+    "Energy": 1,
+    "Healthcare": 1,
+    "Financials": 0,
+    "Consumer Discretionary": 0,
+    "Industrials": 0,
+    "Materials": 0,
+    "Real Estate": 0,
+    "Utilities": 0,
+    "Communication Services": 0
   },
   "regions": {
-    "North America": 6,
-    "Europe": 4,
-    "Emerging Markets": 9,
-    "Asia Pacific": 9,
-    "Latin America": 13,
-    "Middle East & Africa": 9
+    "North America": 1,
+    "Europe": 0,
+    "Emerging Markets": 0,
+    "Asia Pacific": 0,
+    "Latin America": 0,
+    "Middle East & Africa": 1
   },
   "rating_distribution": {
-    "Strong Buy": 20,
-    "Buy": 4,
-    "Hold": 12,
-    "Sell": 8,
-    "Strong Sell": 6
+    "Strong Buy": 2,
+    "Buy": 0,
+    "Hold": 0,
+    "Sell": 0,
+    "Strong Sell": 0
   },
-  "avg_years_coverage": 16.9
+  "avg_years_coverage": 22.0
 }
