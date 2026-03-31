@@ -18,8 +18,8 @@ recall for paraphrase-heavy financial language.
 """
 
 from __future__ import annotations
-import json
 
+import json
 
 # ── Prompt template ───────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ class QueryExpander:
         Expand the query, run retrieval for each variant,
         merge results using RRF, return top final_top_n.
         """
-        from src.retrieval.hybrid import reciprocal_rank_fusion, TOP_K_BM25
+        from src.retrieval.hybrid import reciprocal_rank_fusion
 
         queries  = self.expand(query)
         all_bm25 = []

@@ -14,7 +14,15 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from pathlib import Path
+
+# When run as `python scripts/bootstrap.py`, sys.path[0] is `scripts/`, not the
+# repo root — but `src/ingestion/chunker.py` imports the top-level `chunker`
+# module. Ensure the project root is on sys.path before any src imports.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 def main() -> int:
@@ -22,13 +30,13 @@ def main() -> int:
     parser.add_argument("--count", type=int, default=500, help="Number of synthetic reports")
     args = parser.parse_args()
 
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = _REPO_ROOT
     os.chdir(repo_root)
 
-    from src.ingestion.synthetic_data import generate_corpus
+    from src.eval.ground_truth import build_eval_queries, build_ground_truth, save_ground_truth
     from src.ingestion.chunker import chunk_corpus
     from src.ingestion.metadata_loader import MetadataLoader
-    from src.eval.ground_truth import build_eval_queries, build_ground_truth, save_ground_truth
+    from src.ingestion.synthetic_data import generate_corpus
 
     Path("data/raw").mkdir(parents=True, exist_ok=True)
     Path("data/processed").mkdir(parents=True, exist_ok=True)

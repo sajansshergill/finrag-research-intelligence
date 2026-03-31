@@ -4,9 +4,10 @@ Run: pytest tests/ -v
 """
 
 import json
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Ensure we import this repo's `src/` package (avoid collisions with any
 # unrelated `~/src` directory on the machine).
@@ -115,8 +116,9 @@ class TestChunker:
 class TestBM25Retrieval:
     @pytest.fixture(scope="class")
     def bm25_index(self, tmp_path_factory, sample_chunks):
-        from src.retrieval.hybrid import BM25Index
         from dataclasses import asdict
+
+        from src.retrieval.hybrid import BM25Index
 
         tmp = tmp_path_factory.mktemp("data")
         chunks_path = tmp / "chunks.jsonl"
@@ -154,8 +156,9 @@ class TestBM25Retrieval:
 
 class TestRRFFusion:
     def test_rrf_scores_positive(self, sample_chunks):
-        from src.retrieval.hybrid import reciprocal_rank_fusion
         from dataclasses import asdict
+
+        from src.retrieval.hybrid import reciprocal_rank_fusion
 
         chunks = [asdict(c) if hasattr(c, "__dataclass_fields__") else c
                   for c in sample_chunks[:10]]
@@ -164,8 +167,9 @@ class TestRRFFusion:
         assert all(r.rrf_score > 0 for r in results)
 
     def test_rrf_sorted_descending(self, sample_chunks):
-        from src.retrieval.hybrid import reciprocal_rank_fusion
         from dataclasses import asdict
+
+        from src.retrieval.hybrid import reciprocal_rank_fusion
 
         chunks = [asdict(c) if hasattr(c, "__dataclass_fields__") else c
                   for c in sample_chunks[:10]]
@@ -175,8 +179,9 @@ class TestRRFFusion:
         assert scores == sorted(scores, reverse=True)
 
     def test_rrf_top_n_respected(self, sample_chunks):
-        from src.retrieval.hybrid import reciprocal_rank_fusion
         from dataclasses import asdict
+
+        from src.retrieval.hybrid import reciprocal_rank_fusion
 
         chunks = [asdict(c) if hasattr(c, "__dataclass_fields__") else c
                   for c in sample_chunks[:20]]
@@ -185,13 +190,46 @@ class TestRRFFusion:
         assert len(results) <= 7
 
 
+# ── Query expansion tests ─────────────────────────────────────────────────────
+
+class TestQueryExpansion:
+    def test_retrieve_expanded_returns_fused_results(self, sample_chunks, tmp_path):
+        from dataclasses import asdict
+
+        from src.retrieval.hybrid import BM25Index
+        from src.retrieval.query_expansion import QueryExpander
+
+        chunks_path = tmp_path / "chunks.jsonl"
+        with open(chunks_path, "w") as f:
+            for c in sample_chunks:
+                row = asdict(c) if hasattr(c, "__dataclass_fields__") else c
+                f.write(json.dumps(row) + "\n")
+
+        index = BM25Index(str(chunks_path))
+
+        class _Retriever:
+            def __init__(self):
+                self.bm25_index = index
+
+        expander = QueryExpander(use_mock=True, n_variants=2)
+        fused = expander.retrieve_expanded(
+            "buy recommendation emerging market",
+            _Retriever(),
+            final_top_n=5,
+        )
+        assert isinstance(fused, list)
+        assert len(fused) <= 5
+        assert all(hasattr(r, "chunk_id") and hasattr(r, "rrf_score") for r in fused)
+
+
 # ── Re-ranker tests ───────────────────────────────────────────────────────────
 
 class TestReranker:
     def test_mock_reranker_sorts(self, sample_chunks):
+        from dataclasses import asdict
+
         from src.retrieval.hybrid import reciprocal_rank_fusion
         from src.retrieval.reranker import CrossEncoderReranker
-        from dataclasses import asdict
 
         chunks = [asdict(c) if hasattr(c, "__dataclass_fields__") else c
                   for c in sample_chunks[:10]]
@@ -257,9 +295,10 @@ class TestEvalMetrics:
 
 class TestLLMInterface:
     def test_mock_answer_returns_result(self, sample_chunks):
-        from src.retrieval.hybrid import reciprocal_rank_fusion
-        from src.llm.interface import FinRAGInterface
         from dataclasses import asdict
+
+        from src.llm.interface import FinRAGInterface
+        from src.retrieval.hybrid import reciprocal_rank_fusion
 
         chunks = [asdict(c) if hasattr(c, "__dataclass_fields__") else c
                   for c in sample_chunks[:5]]

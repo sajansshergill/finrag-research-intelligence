@@ -17,15 +17,19 @@ Run:
 """
 
 import sys
-import os
-import json
 import time
+from pathlib import Path
 
 # Ensure we import this repo's `src/` package (avoid collisions with any
 # unrelated `~/src` directory on the machine).
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 
-import streamlit as st
+import streamlit as st  # noqa: E402
+
+CHUNKS_JSONL = REPO_ROOT / "data" / "processed" / "chunks.jsonl"
+CORPUS_JSONL = REPO_ROOT / "data" / "raw" / "corpus.jsonl"
+DUCKDB_PATH = REPO_ROOT / "data" / "finrag.duckdb"
 
 # ── Page config ───────────────────────────────────────────────────────────────
 
@@ -41,13 +45,23 @@ st.set_page_config(
 @st.cache_resource
 def load_bm25_index():
     from src.retrieval.hybrid import BM25Index
-    return BM25Index("data/processed/chunks.jsonl")
+
+    if not CHUNKS_JSONL.is_file():
+        raise FileNotFoundError(
+            f"Missing chunks file: {CHUNKS_JSONL}. Run: make bootstrap"
+        )
+    return BM25Index(str(CHUNKS_JSONL))
 
 @st.cache_resource
 def load_graph():
     from src.retrieval.graph_rag import AnalystGraph
+
+    if not CORPUS_JSONL.is_file():
+        raise FileNotFoundError(
+            f"Missing corpus file: {CORPUS_JSONL}. Run: make bootstrap"
+        )
     g = AnalystGraph()
-    g.build_from_corpus("data/raw/corpus.jsonl")
+    g.build_from_corpus(str(CORPUS_JSONL))
     return g
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -91,6 +105,9 @@ with st.sidebar:
     st.divider()
     st.subheader("LLM")
     use_mock_llm = st.checkbox("Mock LLM (no API key needed)", value=True)
+
+    if not CHUNKS_JSONL.is_file():
+        st.warning("No chunk index found. From the repo root run: `make bootstrap`")
 
 
 # ── Build metadata filter ─────────────────────────────────────────────────────
@@ -137,13 +154,24 @@ query = st.text_input(
 run_btn = st.button("🔍 Search", type="primary", use_container_width=False)
 
 if run_btn and query.strip():
+    if not CHUNKS_JSONL.is_file():
+        st.error(
+            f"Missing `{CHUNKS_JSONL.relative_to(REPO_ROOT)}`. "
+            "From the project root run: `make bootstrap` or `python scripts/bootstrap.py`."
+        )
+        st.stop()
+
     metadata_filter = build_filter()
 
     t_total_start = time.time()
 
     # ── Retrieval ─────────────────────────────────────────────────────────
     with st.spinner("Retrieving relevant research..."):
-        index = load_bm25_index()
+        try:
+            index = load_bm25_index()
+        except FileNotFoundError as e:
+            st.error(str(e))
+            st.stop()
 
         t_ret_start = time.time()
 
@@ -177,14 +205,28 @@ if run_btn and query.strip():
 
         # Apply metadata post-filter (simulate pre-filter without Qdrant)
         if metadata_filter and metadata_filter != "1=1":
-            import duckdb
-            con = duckdb.connect("data/finrag.duckdb", read_only=True)
-            allowed = {
-                r[0] for r in
-                con.execute(f"SELECT report_id FROM reports WHERE {metadata_filter}").fetchall()
-            }
-            con.close()
-            fused = [r for r in fused if r.report_id in allowed]
+            if not DUCKDB_PATH.is_file():
+                st.warning(
+                    "Metadata filters need DuckDB (`data/finrag.duckdb`). "
+                    "Run `make bootstrap` — showing unfiltered retrieval."
+                )
+            else:
+                try:
+                    import duckdb
+
+                    con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
+                    try:
+                        allowed = {
+                            r[0]
+                            for r in con.execute(
+                                f"SELECT report_id FROM reports WHERE {metadata_filter}"
+                            ).fetchall()
+                        }
+                        fused = [r for r in fused if r.report_id in allowed]
+                    finally:
+                        con.close()
+                except Exception as exc:
+                    st.warning(f"Metadata filter failed ({exc}); showing unfiltered retrieval.")
 
         ret_latency = (time.time() - t_ret_start) * 1000
 
@@ -252,11 +294,11 @@ if run_btn and query.strip():
                     st.markdown(f"> {r.text}")
 
                     score_cols = st.columns(3)
-                    if r.dense_rank:
+                    if r.dense_rank is not None:
                         score_cols[0].caption(f"Dense rank: #{r.dense_rank}")
-                    if r.bm25_rank:
+                    if r.bm25_rank is not None:
                         score_cols[1].caption(f"BM25 rank: #{r.bm25_rank}")
-                    if r.rerank_score:
+                    if r.rerank_score is not None:
                         score_cols[2].caption(f"Rerank score: {r.rerank_score:.4f}")
 
     # ── Right: LLM answer ─────────────────────────────────────────────────

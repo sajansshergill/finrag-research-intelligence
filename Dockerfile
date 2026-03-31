@@ -11,11 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml .
 RUN pip install --no-cache-dir -e ".[dev]"
 
-# Copy source
+# Copy source (root-level modules are imported by `src.*` compatibility shims)
 COPY src/     ./src/
 COPY app/     ./app/
 COPY dags/    ./dags/
 COPY data/    ./data/
+COPY *.py     ./
 
 EXPOSE 8501
 
