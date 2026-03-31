@@ -1,0 +1,11 @@
+# Streamlit Community Cloud & minimal deploy: no torch/triton/sentence-transformers.
+# For dense retrieval + Qdrant + MLflow locally: pip install -e ".[full]"
+streamlit>=1.32
+duckdb>=0.10
+pandas>=2.0
+numpy>=1.26
+faker>=24.0
+rank-bm25>=0.2.2
+networkx>=3.2
+openai>=1.12
+anthropic>=0.20

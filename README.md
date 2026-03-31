@@ -14,10 +14,13 @@ This repo is designed to run **without external services** (mock LLM, BM25-only 
 ## Quickstart (local, no Docker)
 
 ```bash
-python -m pip install -e ".[dev]"
+# Core app + tests (BM25, mock LLM; no torch). For embeddings/Qdrant/MLflow add [full].
+python -m pip install -e ".[dev,full]"
 make bootstrap
 make app
 ```
+
+Streamlit Community Cloud uses **`requirements.txt`** (pip). Do not rely on Poetry + `pyproject.toml` alone there, or heavy packages (e.g. `sentence-transformers` → torch/triton) can fail to install on the cloud image.
 
 Then open `http://localhost:8501`.
 

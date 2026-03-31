@@ -9,22 +9,27 @@ description = "Production-grade hybrid RAG pipeline for financial research archi
 readme      = "README.md"
 requires-python = ">=3.11"
 
+# Core: enough for Streamlit demo, BM25, DuckDB, mock LLM (no torch — avoids
+# triton wheels missing on some hosts e.g. Streamlit Cloud Python 3.14).
 dependencies = [
     "faker>=24.0",
     "duckdb>=0.10",
     "rank-bm25>=0.2.2",
     "networkx>=3.2",
-    "sentence-transformers>=2.6",
-    "qdrant-client>=1.8",
     "openai>=1.12",
     "anthropic>=0.20",
-    "mlflow>=2.11",
     "streamlit>=1.32",
     "pandas>=2.0",
     "numpy>=1.26",
 ]
 
 [project.optional-dependencies]
+# Dense embeddings, vector store, experiment tracking (pulls torch on many platforms).
+full = [
+    "sentence-transformers>=2.6",
+    "qdrant-client>=1.8",
+    "mlflow>=2.11",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",

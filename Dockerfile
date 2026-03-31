@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python deps
 COPY pyproject.toml .
-RUN pip install --no-cache-dir -e ".[dev]"
+RUN pip install --no-cache-dir -e ".[dev,full]"
 
 # Copy source (root-level modules are imported by `src.*` compatibility shims)
 COPY src/     ./src/
